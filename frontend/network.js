@@ -16,7 +16,7 @@ class NetworkManager {
                 : window.location.origin;
             
             this.socket = io(serverURL, {
-                transports: ['websocket', 'polling'],
+                transports: ['polling'],
                 reconnection: true,
                 reconnectionDelay: 1000,
                 reconnectionDelayMax: 5000,

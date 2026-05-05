@@ -16,19 +16,25 @@ class PowerUp:
     id: int
 
 class PowerUpManager:
-    def __init__(self, maze_size, num_powerups=15):
-        self.maze_size = maze_size
+    def __init__(self, maze, num_powerups=15):
+        self.maze = maze
+        self.maze_size = maze.size
         self.powerups: List[PowerUp] = []
         self.next_id = 0
         self._spawn_powerups(num_powerups)
     
     def _spawn_powerups(self, count):
-        """Randomly place power-ups on the maze"""
-        for _ in range(count):
-            x = random.randint(2, self.maze_size - 3)
-            y = random.randint(2, self.maze_size - 3)
+        """Randomly place power-ups on empty maze cells."""
+        empty_cells = [
+            (x, y)
+            for y, row in enumerate(self.maze.grid)
+            for x, cell in enumerate(row)
+            if cell == 0 and (x, y) not in {self.maze.start, self.maze.end}
+        ]
+        random.shuffle(empty_cells)
+
+        for x, y in empty_cells[:count]:
             ptype = random.choice(list(PowerUpType))
-            
             self.powerups.append(PowerUp(
                 x=x,
                 y=y,

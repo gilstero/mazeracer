@@ -29,7 +29,7 @@ class GameSession:
         
         # Game state
         self.maze = Maze(MazeSize[maze_size.upper()].value, MazeShape[maze_shape.upper()])
-        self.powerup_manager = PowerUpManager(self.maze.size)
+        self.powerup_manager = PowerUpManager(self.maze)
         
         self.started_at = datetime.now()
         self.completed = False

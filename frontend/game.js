@@ -16,6 +16,8 @@ class Game {
         this.playerColor = '#FF0000';
         this.selectedSize = 'medium';
         this.selectedShape = 'square';
+        this.cellSize = 12;
+        this.hasWinnerSkin = this.getCookie('mazeRacerWinnerSkin') === 'true';
         
         this.keys = {};
         this.setupInputHandlers();
@@ -116,8 +118,18 @@ class Game {
     updateCanvasSize() {
         if (!this.maze) return;
         const size = this.maze.size;
-        this.canvas.width = size * 8;
-        this.canvas.height = size * 8;
+        this.cellSize = this.getCellSize(size);
+        this.canvas.width = size * this.cellSize;
+        this.canvas.height = size * this.cellSize;
+        this.canvas.style.width = `${this.canvas.width}px`;
+        this.canvas.style.height = `${this.canvas.height}px`;
+        this.ctx.imageSmoothingEnabled = false;
+    }
+
+    getCellSize(size) {
+        if (size <= 30) return 16;
+        if (size <= 50) return 12;
+        return 7;
     }
     
     ready() {
@@ -194,6 +206,11 @@ class Game {
     showGameOver() {
         const winnerPlayer = this.players[this.winner];
         const isWinner = this.winner === this.playerId;
+
+        if (isWinner) {
+            this.hasWinnerSkin = true;
+            this.setCookie('mazeRacerWinnerSkin', 'true', 365);
+        }
         
         document.getElementById('resultText').textContent = isWinner ? 'You Won!' : `${winnerPlayer.name} Won!`;
         document.getElementById('timeText').textContent = `Time: ${winnerPlayer.finishTime.toFixed(2)}s`;
@@ -217,7 +234,7 @@ class Game {
         let newX = player.x;
         let newY = player.y;
         
-        const moveSpeed = 0.1;
+        const moveSpeed = 0.13;
         const speedMult = player.speedBoost ? 1.5 : 1.0;
         const actualSpeed = moveSpeed * speedMult;
         
@@ -246,6 +263,7 @@ class Game {
         if (!this.maze) return;
         
         this.renderMaze();
+        this.renderPathHint();
         this.renderFinish();
         this.renderPowerups();
         this.renderPlayers();
@@ -254,7 +272,7 @@ class Game {
     renderMaze() {
         const grid = this.maze.grid;
         const size = this.maze.size;
-        const pixelSize = 8;
+        const pixelSize = this.cellSize;
         
         this.ctx.fillStyle = '#333333';
         for (let y = 0; y < size; y++) {
@@ -265,9 +283,96 @@ class Game {
             }
         }
     }
+
+    renderPathHint() {
+        const currentPlayer = this.players[this.playerId];
+        if (!currentPlayer || !currentPlayer.showPath) return;
+
+        const path = this.findShortestPath(
+            Math.round(currentPlayer.x),
+            Math.round(currentPlayer.y),
+            this.maze.end[0],
+            this.maze.end[1]
+        );
+
+        if (path.length === 0) return;
+
+        const pixelSize = this.cellSize;
+        this.ctx.fillStyle = '#5fd36a';
+
+        for (const [x, y] of path) {
+            this.ctx.fillRect(
+                x * pixelSize,
+                y * pixelSize,
+                pixelSize,
+                pixelSize
+            );
+        }
+    }
+
+    findShortestPath(startX, startY, endX, endY) {
+        const grid = this.maze.grid;
+        const size = this.maze.size;
+
+        if (!this.isOpenCell(startX, startY) || !this.isOpenCell(endX, endY)) {
+            return [];
+        }
+
+        const queue = [[startX, startY]];
+        const visited = Array(size).fill(null).map(() => Array(size).fill(false));
+        const previous = new Map();
+        visited[startY][startX] = true;
+
+        for (let i = 0; i < queue.length; i++) {
+            const [x, y] = queue[i];
+            if (x === endX && y === endY) break;
+
+            for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) {
+                const nextX = x + dx;
+                const nextY = y + dy;
+
+                if (
+                    nextX < 0 || nextX >= size ||
+                    nextY < 0 || nextY >= size ||
+                    visited[nextY][nextX] ||
+                    grid[nextY][nextX] !== 0
+                ) {
+                    continue;
+                }
+
+                visited[nextY][nextX] = true;
+                previous.set(`${nextX},${nextY}`, [x, y]);
+                queue.push([nextX, nextY]);
+            }
+        }
+
+        if (!visited[endY][endX]) return [];
+
+        const path = [];
+        let current = [endX, endY];
+
+        while (current) {
+            path.push(current);
+            if (current[0] === startX && current[1] === startY) break;
+            current = previous.get(`${current[0]},${current[1]}`);
+        }
+
+        return path.reverse();
+    }
+
+    isOpenCell(x, y) {
+        return (
+            this.maze &&
+            x >= 0 &&
+            x < this.maze.size &&
+            y >= 0 &&
+            y < this.maze.size &&
+            this.maze.grid[y][x] === 0
+        );
+    }
     
     renderFinish() {
-        const pixelSize = 8;
+        const pixelSize = this.cellSize;
         const endX = this.maze.end[0];
         const endY = this.maze.end[1];
         
@@ -290,7 +395,7 @@ class Game {
     }
     
     renderPowerups() {
-        const pixelSize = 8;
+        const pixelSize = this.cellSize;
         for (const powerup of this.powerups) {
             let color;
             switch (powerup.type) {
@@ -334,11 +439,11 @@ class Game {
     }
     
     renderPlayers() {
-        const pixelSize = 8;
+        const pixelSize = this.cellSize;
         const playerIds = Object.keys(this.players);
 
         if (playerIds.length === 0) {
-            this.drawPlayer(1, 1, window.selectedColor || this.playerColor, this.selectedShape, pixelSize, false);
+            this.drawPlayer(1, 1, window.selectedColor || this.playerColor, this.selectedShape, pixelSize, false, this.hasWinnerSkin);
             return;
         }
         
@@ -347,7 +452,7 @@ class Game {
             const isCurrentPlayer = playerId === this.playerId;
             
             if (!isCurrentPlayer) {
-                this.drawPlayer(player.x, player.y, player.color, player.shape, pixelSize, true);
+                this.drawPlayer(player.x, player.y, player.color, player.shape, pixelSize, true, false);
             }
         }
         
@@ -355,26 +460,31 @@ class Game {
         if (!currentPlayer) return;
 
         this.ctx.globalAlpha = currentPlayer.frozen ? 0.5 : 1.0;
-        this.drawPlayer(currentPlayer.x, currentPlayer.y, currentPlayer.color, currentPlayer.shape, pixelSize, false);
+        this.drawPlayer(currentPlayer.x, currentPlayer.y, currentPlayer.color, currentPlayer.shape, pixelSize, false, this.hasWinnerSkin);
         this.ctx.globalAlpha = 1.0;
         
+        const left = Math.round(currentPlayer.x * pixelSize);
+        const top = Math.round(currentPlayer.y * pixelSize);
+
         this.ctx.strokeStyle = '#333333';
         this.ctx.lineWidth = 1;
-        this.ctx.strokeRect(currentPlayer.x * pixelSize, currentPlayer.y * pixelSize, pixelSize, pixelSize);
+        this.ctx.strokeRect(left + 0.5, top + 0.5, pixelSize - 1, pixelSize - 1);
     }
 
-    drawPlayer(x, y, color, shape, pixelSize, ghost) {
-        const left = x * pixelSize;
-        const top = y * pixelSize;
+    drawPlayer(x, y, color, shape, pixelSize, ghost, crowned) {
+        const left = Math.round(x * pixelSize);
+        const top = Math.round(y * pixelSize);
         const centerX = left + pixelSize / 2;
         const centerY = top + pixelSize / 2;
-        const inset = pixelSize * 0.15;
+        const inset = Math.max(2, Math.round(pixelSize * 0.18));
 
-        this.ctx.fillStyle = ghost ? `${color}66` : color;
+        this.ctx.save();
+        this.ctx.globalAlpha *= ghost ? 0.42 : 1;
+        this.ctx.fillStyle = color;
         this.ctx.beginPath();
 
         if (shape === 'circle') {
-            this.ctx.arc(centerX, centerY, pixelSize * 0.42, 0, Math.PI * 2);
+            this.ctx.arc(centerX, centerY, Math.max(2, Math.floor(pixelSize * 0.38)), 0, Math.PI * 2);
         } else if (shape === 'triangle') {
             this.ctx.moveTo(centerX, top + inset);
             this.ctx.lineTo(left + pixelSize - inset, top + pixelSize - inset);
@@ -385,6 +495,45 @@ class Game {
         }
 
         this.ctx.fill();
+        if (crowned) {
+            this.drawCrown(left, top, pixelSize);
+        }
+        this.ctx.restore();
+    }
+
+    drawCrown(left, top, pixelSize) {
+        const crownWidth = Math.max(8, Math.round(pixelSize * 0.7));
+        const crownHeight = Math.max(5, Math.round(pixelSize * 0.32));
+        const crownLeft = Math.round(left + (pixelSize - crownWidth) / 2);
+        const crownTop = Math.round(top - crownHeight * 0.55);
+        const baseY = crownTop + crownHeight;
+
+        this.ctx.fillStyle = '#f5c542';
+        this.ctx.strokeStyle = '#333333';
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        this.ctx.moveTo(crownLeft, baseY);
+        this.ctx.lineTo(crownLeft, crownTop + crownHeight * 0.38);
+        this.ctx.lineTo(crownLeft + crownWidth * 0.25, crownTop);
+        this.ctx.lineTo(crownLeft + crownWidth * 0.5, crownTop + crownHeight * 0.38);
+        this.ctx.lineTo(crownLeft + crownWidth * 0.75, crownTop);
+        this.ctx.lineTo(crownLeft + crownWidth, crownTop + crownHeight * 0.38);
+        this.ctx.lineTo(crownLeft + crownWidth, baseY);
+        this.ctx.closePath();
+        this.ctx.fill();
+        this.ctx.stroke();
+    }
+
+    setCookie(name, value, days) {
+        const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
+        document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+    }
+
+    getCookie(name) {
+        return document.cookie
+            .split('; ')
+            .find(row => row.startsWith(`${name}=`))
+            ?.split('=')[1] || '';
     }
 }
 
@@ -440,36 +589,53 @@ class Maze {
         this.shape = shape;
         this.grid = this.generateMaze();
         this.start = [1, 1];
-        this.end = [size - 2, size - 2];
+        this.end = this.findEnd();
     }
     
     generateMaze() {
         const size = this.size;
         const maze = Array(size).fill(null).map(() => Array(size).fill(1));
-        
-        const carve = (x, y) => {
-            maze[y][x] = 0;
+
+        const stack = [[1, 1]];
+        maze[1][1] = 0;
+
+        while (stack.length > 0) {
+            const [x, y] = stack[stack.length - 1];
             const dirs = [[0, -2], [2, 0], [0, 2], [-2, 0]];
             dirs.sort(() => Math.random() - 0.5);
-            
+            let carved = false;
+
             for (const [dx, dy] of dirs) {
                 const nx = x + dx, ny = y + dy;
                 if (nx > 0 && nx < size - 1 && ny > 0 && ny < size - 1 && maze[ny][nx] === 1) {
                     maze[y + dy / 2][x + dx / 2] = 0;
-                    carve(nx, ny);
+                    maze[ny][nx] = 0;
+                    stack.push([nx, ny]);
+                    carved = true;
+                    break;
                 }
             }
-        };
-        
-        carve(1, 1);
+
+            if (!carved) stack.pop();
+        }
+
         return maze;
+    }
+
+    findEnd() {
+        for (let y = this.size - 2; y > 0; y--) {
+            for (let x = this.size - 2; x > 0; x--) {
+                if (this.grid[y][x] === 0) return [x, y];
+            }
+        }
+        return this.start;
     }
 }
 
 const MazeSize = {
-    SMALL: 15,
-    MEDIUM: 25,
-    LARGE: 40
+    SMALL: 21,
+    MEDIUM: 31,
+    LARGE: 41
 };
 
 window.mazeGenerator = { Maze, MazeSize };
