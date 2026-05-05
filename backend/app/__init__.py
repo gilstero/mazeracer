@@ -1,10 +1,12 @@
+import os
+
 from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO
 
 def create_app():
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = 'maze-racer-secret-key'
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'maze-racer-dev-secret')
     
     CORS(app)
     socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
