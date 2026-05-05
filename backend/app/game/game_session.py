@@ -15,12 +15,16 @@ class GameSession:
         self.players[player1_data['id']] = PlayerState(
             id=player1_data['id'],
             name=player1_data['name'],
-            color=player1_data['color']
+            color=player1_data['color'],
+            size=player1_data.get('size', 'medium'),
+            shape=player1_data.get('shape', 'square')
         )
         self.players[player2_data['id']] = PlayerState(
             id=player2_data['id'],
             name=player2_data['name'],
-            color=player2_data['color']
+            color=player2_data['color'],
+            size=player2_data.get('size', 'medium'),
+            shape=player2_data.get('shape', 'square')
         )
         
         # Game state

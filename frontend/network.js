@@ -10,8 +10,8 @@ class NetworkManager {
     
     connect() {
         return new Promise((resolve, reject) => {
-            // Connect to backend server
-            const serverURL = window.location.origin.includes('localhost') 
+            const isLocal = ['localhost', '127.0.0.1', '0.0.0.0'].includes(window.location.hostname);
+            const serverURL = isLocal
                 ? 'http://localhost:5001' 
                 : window.location.origin;
             
@@ -40,6 +40,10 @@ class NetworkManager {
             
             this.socket.on('waiting', (data) => {
                 this.emit('waiting', data);
+            });
+
+            this.socket.on('left_queue', (data) => {
+                this.emit('leftQueue', data);
             });
             
             this.socket.on('matched', (data) => {
@@ -70,6 +74,10 @@ class NetworkManager {
             size: size,
             shape: shape
         });
+    }
+
+    leaveQueue() {
+        this.socket.emit('leave_queue');
     }
     
     sendMove(x, y) {

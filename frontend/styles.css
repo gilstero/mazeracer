@@ -12,7 +12,8 @@ html, body {
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
     background: white;
-    color: #333;
+    color: #222;
+    overflow: hidden;
 }
 
 .main-screen {
@@ -23,21 +24,21 @@ body {
 
 /* LEFT PANEL */
 .left-panel {
-    width: 25%;
-    padding: 20px;
-    border-right: 1px solid #ddd;
-    overflow-y: auto;
+    width: 280px;
+    padding: 16px;
+    border-right: 1px solid #d8d8d8;
+    overflow: hidden;
     background: white;
 }
 
 .left-panel h1 {
-    font-size: 24px;
-    margin-bottom: 20px;
+    font-size: 22px;
+    margin-bottom: 14px;
     font-weight: 600;
 }
 
 .section {
-    margin-bottom: 18px;
+    margin-bottom: 12px;
 }
 
 .section label {
@@ -46,13 +47,13 @@ body {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 6px;
+    margin-bottom: 5px;
     color: #666;
 }
 
 .section input {
     width: 100%;
-    padding: 8px;
+    padding: 7px 8px;
     border: 1px solid #ccc;
     border-radius: 3px;
     font-size: 14px;
@@ -67,13 +68,13 @@ body {
 /* COLOR GRID */
 .color-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 4px;
+    grid-template-columns: repeat(7, 18px);
+    gap: 5px;
 }
 
 .color-btn {
-    width: 100%;
-    aspect-ratio: 1;
+    width: 18px;
+    height: 18px;
     border: 2px solid transparent;
     border-radius: 2px;
     cursor: pointer;
@@ -93,11 +94,11 @@ body {
 .button-group {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
+    gap: 5px;
 }
 
 .btn {
-    padding: 8px 12px;
+    padding: 7px 10px;
     background: white;
     border: 1px solid #ccc;
     color: #333;
@@ -122,7 +123,7 @@ body {
 
 .play-btn {
     width: 100%;
-    padding: 10px;
+    padding: 9px;
     background: #333;
     color: white;
     border-color: #333;
@@ -131,7 +132,7 @@ body {
 }
 
 .play-btn:hover {
-    background: #555;
+    background: #444;
 }
 
 .back-btn {
@@ -142,18 +143,43 @@ body {
 }
 
 .status {
-    margin-top: 16px;
-    padding: 10px;
-    background: #f9f9f9;
+    margin-top: 8px;
+    padding: 8px;
+    background: white;
     border: 1px solid #eee;
     border-radius: 3px;
     font-size: 12px;
     text-align: center;
     color: #666;
-    min-height: 40px;
+    min-height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.choices {
+    display: grid;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.choice-row {
+    display: grid;
+    grid-template-columns: 14px 1fr auto auto;
+    gap: 8px;
+    align-items: center;
+    padding: 7px 8px;
+    border: 1px solid #e7e7e7;
+    border-radius: 3px;
+    font-size: 12px;
+    color: #333;
+}
+
+.color-dot {
+    width: 12px;
+    height: 12px;
+    border: 1px solid #333;
+    border-radius: 50%;
 }
 
 /* RIGHT PANEL */
@@ -162,13 +188,15 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #fafafa;
+    background: white;
     position: relative;
 }
 
 #gameCanvas {
-    max-width: 90%;
-    max-height: 90%;
+    width: min(72vw, 72vh);
+    height: min(72vw, 72vh);
+    max-width: calc(100vw - 320px);
+    max-height: calc(100vh - 32px);
     border: 1px solid #ddd;
     background: white;
     image-rendering: pixelated;
@@ -210,7 +238,7 @@ body {
 /* RESPONSIVE */
 @media (max-width: 1024px) {
     .left-panel {
-        width: 30%;
+        width: 250px;
     }
     
     .left-panel h1 {
@@ -227,15 +255,23 @@ body {
         width: 100%;
         border-right: none;
         border-bottom: 1px solid #ddd;
-        max-height: 40%;
+        max-height: 46%;
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
         gap: 10px;
         padding: 15px;
+        overflow: auto;
     }
     
     .right-panel {
         flex: 1;
-        max-height: 60%;
+        max-height: 54%;
+    }
+
+    #gameCanvas {
+        width: min(90vw, 48vh);
+        height: min(90vw, 48vh);
+        max-width: 90vw;
+        max-height: 48vh;
     }
 }

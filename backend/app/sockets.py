@@ -15,6 +15,7 @@ def register_socket_handlers(socketio):
     @socketio.on('disconnect')
     def handle_disconnect():
         print(f'Client disconnected: {request.sid}')
+        matchmaker.leave_queue(request.sid)
     
     @socketio.on('join_queue')
     def handle_join_queue(data):
@@ -25,7 +26,7 @@ def register_socket_handlers(socketio):
         maze_size = data.get('size', 'medium')
         maze_shape = data.get('shape', 'square')
         
-        result = matchmaker.join_queue(player_name, player_color, session_id)
+        result = matchmaker.join_queue(player_name, player_color, session_id, maze_size, maze_shape)
         
         if result:
             # Match found! Unpack the result
@@ -66,6 +67,15 @@ def register_socket_handlers(socketio):
                 'message': 'Waiting for opponent...',
                 'queueSize': matchmaker.get_queue_size()
             })
+
+    @socketio.on('leave_queue')
+    def handle_leave_queue():
+        """Player leaves matchmaking queue before a match starts."""
+        removed = matchmaker.leave_queue(request.sid)
+        emit('left_queue', {
+            'removed': removed,
+            'queueSize': matchmaker.get_queue_size()
+        })
     
     
     @socketio.on('move')

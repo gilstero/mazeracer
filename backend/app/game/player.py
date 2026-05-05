@@ -7,6 +7,8 @@ class PlayerState:
     id: str
     name: str
     color: str
+    size: str = 'medium'
+    shape: str = 'square'
     x: float = 1.0
     y: float = 1.0
     
@@ -59,6 +61,8 @@ class PlayerState:
             'id': self.id,
             'name': self.name,
             'color': self.color,
+            'size': self.size,
+            'shape': self.shape,
             'x': self.x,
             'y': self.y,
             'frozen': self.is_frozen(),

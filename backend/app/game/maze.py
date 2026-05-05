@@ -57,7 +57,7 @@ class Maze:
         """Return maze data for client"""
         return {
             'size': self.size,
-            'shape': self.shape,
+            'shape': self.shape.value,
             'grid': self.grid,
             'start': self.start,
             'end': self.end
